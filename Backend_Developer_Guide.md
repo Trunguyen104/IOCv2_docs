@@ -233,6 +233,7 @@ Chạy lệnh Migration tại thư mục gốc `Internship-OneConnect_IOC_v2.0_B
 
 4. **Truy cập Swagger**:
    Mở trình duyệt và truy cập: `http://localhost:5000/swagger` (hoặc port 8080 tùy cấu hình).
+### Run full project với Docker: docker compose up -d --build
 
 ---
 
