@@ -134,3 +134,65 @@ Mọi bảng nghiệp vụ chính phải bao gồm các trường:
 - Không chỉnh sửa Migration đã chạy trên Production.
 - **Security**: Không lưu mật khẩu/token dạng plain text, không log dữ liệu nhạy cảm.
 - **Hiệu năng**: Tránh `SELECT *`, chỉ lấy các cột cần thiết.
+
+---
+
+## 7. Nguyên tắc Comment Code (Code Commenting)
+
+Mục tiêu chính: Code nên tự giải thích (Self-documenting). Comment chỉ dùng để giải thích **TẠI SAO (WHY)**, không phải **CÁI GÌ (WHAT)**.
+
+### 7.1. Ngôn ngữ (Language)
+
+- **Mặc định**: Ưu tiên sử dụng **Tiếng Anh** cho code comments (biến, hàm, class) để đảm bảo tính chuyên nghiệp và khả năng hội nhập.
+- **Ngoại lệ**: Có thể sử dụng **Tiếng Việt** (có dấu) cho các logic nghiệp vụ cực kỳ phức tạp hoặc đặc thù dự án mà tiếng Anh khó diễn đạt hết ý nghĩa cho team.
+
+### 7.2. Documentation Comments (Mô tả API/Function)
+
+Bắt buộc đối với các **Public Class, Interface, Method, API Endpoint**.
+
+- **Backend (C#)**: Sử dụng XML Documentation (`/// <summary>`).
+  ```csharp
+  /// <summary>
+  /// Tính toán điểm trung bình của sinh viên dựa trên trọng số tín chỉ.
+  /// </summary>
+  /// <param name="studentId">ID của sinh viên cần tính.</param>
+  /// <returns>Kết quả điểm trung bình (thang 10).</returns>
+  /// <exception cref="StudentNotFoundException">Ném lỗi nếu không tìm thấy sinh viên.</exception>
+  public async Task<double> CalculateGPA(Guid studentId);
+  ```
+
+- **Frontend (JS/TS)**: Sử dụng JSDoc (`/** ... */`).
+  ```typescript
+  /**
+   * Chuyển đổi định dạng ngày tháng sang chuỗi hiển thị VN (dd/MM/yyyy).
+   * @param {Date} date - Đối tượng Date cần format.
+   * @returns {string} Chuỗi ngày tháng dạng "dd/MM/yyyy".
+   */
+  export const formatDateVN = (date: Date): string => { ... }
+  ```
+
+### 7.3. Inline Comments (Comment trong dòng)
+
+- Chỉ dùng khi logic quá phức tạp, thuật toán khó hiểu, hoặc sử dụng "magic number/string".
+- Đặt comment **trên** dòng code cần giải thích, không đặt cùng dòng (trừ khi biến ngắn/định nghĩa biến).
+- **Tránh**: Comment giải thích code hiển nhiên (VD: `i++ // Tăng i` -> Lãng phí).
+  
+  **Ví dụ Tốt:**
+  ```csharp
+  // Tăng timeout lên 5s do service bên thứ 3 phản hồi chậm vào giờ cao điểm
+  httpClient.Timeout = TimeSpan.FromSeconds(5);
+  ```
+
+### 7.4. TODO & FIXME
+
+Sử dụng các từ khóa chuẩn để đánh dấu các việc cần làm hoặc nợ kỹ thuật. IDE sẽ highlight các từ khóa này.
+
+- `// TODO: [Người phụ trách] Nội dung`: Tính năng chưa làm hoặc cần cải thiện sau.
+- `// FIXME: [Người phụ trách] Nội dung`: Code đang lỗi hoặc chạy chưa đúng, cần sửa gấp.
+- `// NOTE: Nội dung`: Lưu ý quan trọng về đoạn code này (ví dụ: tại sao phải hack/workaround).
+
+### 7.5. Code đã cũ (Dead Code)
+
+- **KHÔNG** comment lại code cũ "để dành". Hãy xóa thẳng tay.
+- Code cũ đã có Git lưu lại lịch sử, không cần giữ lại trong source file làm rác code và gây rối mắt.
+
