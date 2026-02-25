@@ -709,37 +709,46 @@ Chạy lệnh Migration tại thư mục gốc `Internship-OneConnect_IOC_v2.0_B
 
 ## 10. Hướng Dẫn Chạy Project
 
-### Yêu cầu:
-- Docker Desktop (để chạy PostgreSQL và Redis)
-- .NET 9 SDK
+### 10.1. Cấu trúc thư mục chuẩn
+Để dự án chạy mượt mà giữa Backend và Frontend, cấu trúc thư mục nên được tổ chức như sau:
+```text
+Project_Root/
+├── Internship-OneConnect_IOC_v2.0_Backend/   (Project Backend)
+├── internship-oneconnect_ioc_v2.0_frontend/  (Project Frontend)
+├── .env                                      (File cấu hình chung)
+└── docker-compose.yml                        (File điều phối chung)
+```
 
-### Các bước:
+### 10.2. Cấu hình Environment (.env)
+Bố trí file `.env` nằm tại **thư mục gốc (Project_Root)**. Đây là nơi chứa các biến môi trường dùng chung cho cả Docker và khi chạy Local (FE/BE).
 
-1. **Cấu hình Environment**:
-   - Kiểm tra file `appsettings.json` hoặc biến môi trường trong `docker-compose.yml`.
-   - Connection String mặc định kết nối tới `iocv2_db` (PostgreSQL) và `iocv2_redis` (Redis).
+### 10.3. Cách chạy dự án
 
-2. **Khởi chạy Infrastructure (DB & Redis)**:
-   Mở terminal tại thư mục gốc và chạy:
-   ```bash
-   docker-compose up -d db redis
-   ```
-   (Lệnh này sẽ khởi động container `iocv2_db` và `iocv2_redis`)
-
-3. **Chạy Backend API**:
-   ```bash
-   dotnet run --project IOCv2.API
-   ```
-   Hoặc mở Solution bằng Visual Studio / Rider và nhấn F5.
-
-4. **Truy cập Swagger**:
-   Mở trình duyệt và truy cập: `http://localhost:5133/swagger`
-
-### Run full project với Docker:
-
+#### Cách 1: Chạy toàn bộ bằng Docker (Project Setup nhanh)
+Sử dụng Docker Compose để khởi chạy tất cả dịch vụ (Database, Redis, Backend, Frontend):
 ```bash
 docker compose up -d --build
 ```
+- API Swagger: `http://localhost:8080/swagger` (Port trong Docker)
+- Frontend: `http://localhost:3000`
+
+#### Cách 2: Chạy Backend trên Docker + Frontend Local (Phát triển Frontend)
+Nếu bạn muốn dev Frontend và sử dụng Hot Reload (`npm run dev`), hãy làm theo các bước sau:
+
+1. Mở file `docker-compose.yml` tại Project_Root.
+2. **Comment (đóng)** toàn bộ block dịch vụ `frontend` (từ dòng `frontend:` đến hết cấu hình của nó).
+3. Khởi chạy Backend và các hạ tầng (DB, Redis):
+   ```bash
+   docker compose up -d --build
+   ```
+4. Mở terminal mới, vào thư mục Frontend và chạy lệnh:
+   ```bash
+   cd internship-oneconnect_ioc_v2.0_frontend
+   npm install
+   npm run dev
+   ```
+
+---
 
 ---
 
