@@ -2,7 +2,7 @@
 
 ## Vấn đề (Problem):
 
-Trong mô hình thực tập doanh nghiệp, việc báo cáo tiến độ hàng ngày (Daily Standup/Report) là bắt buộc để Mentor và Nhà trường nắm bắt được sinh viên đang làm gì, gặp khó khăn gì. Tuy nhiên, việc báo cáo qua email hay chat thường trôi tin, khó thống kê và khó kiểm soát tính chuyên cần (nộp đúng hạn/muộn).
+Trong mô hình thực tập doanh nghiệp, việc báo cáo tiến độ hàng ngày (Logbook) là bắt buộc để Mentor và Nhà trường nắm bắt được sinh viên đang làm gì, gặp khó khăn gì. Tuy nhiên, việc báo cáo qua email hay chat thường trôi tin, khó thống kê và khó kiểm soát tính chuyên cần (nộp đúng hạn/muộn).
 
 ## Giá trị Nghiệp vụ (Business Value):
 
@@ -14,9 +14,9 @@ Trong mô hình thực tập doanh nghiệp, việc báo cáo tiến độ hàng
 
 ## Đối tượng (Actor):
 
-- **Primary Actor:** Sinh viên (Student) — người tạo và nộp báo cáo.
+- **Primary Actor:** Sinh viên (Student) — người tạo, chỉnh sửa và nộp báo cáo.
 
-- **Secondary Actors:** Mentor, HR — xem và duyệt báo cáo (nếu có quy trình duyệt).
+- **Secondary Actors:** Mentor, HR — xem danh sách báo cáo.
 
 ---
 
@@ -24,55 +24,41 @@ Trong mô hình thực tập doanh nghiệp, việc báo cáo tiến độ hàng
 
 ## 2.1. Luồng Xem Danh sách Báo cáo
 
-1. Student truy cập menu **"Báo cáo hàng ngày"**.
+1. Student truy cập menu **"Báo cáo hàng ngày"** (Logbooks) của một dự án. Hệ thống gọi API `GET /api/projects/{projectId:guid}/logbooks`.
 
-2. Hệ thống hiển thị danh sách các báo cáo đã nộp.
+2. Hệ thống hiển thị danh sách các báo cáo đã nộp có phân trang.
 
-3. Bảng hiển thị các cột: Ngày báo cáo, Tên sinh viên (nếu xem nhóm), Trạng thái duyệt (Status), Tóm tắt công việc, Issue đã làm, Thời gian nộp (Time), Trạng thái nộp (Đúng hạn/Muộn).
+3. Dữ liệu hiển thị bao gồm: Tên sinh viên (StudentName), Ngày báo cáo (DateReport), Tóm tắt công việc (Summary), Vấn đề gặp phải (Issue), Trạng thái (Status), và Số lượng công việc liên kết (TotalWorkItems).
 
-4. Cuối bảng có thanh phân trang và tổng số bản ghi.
+4. Mặc định danh sách được sắp xếp theo thời gian tạo mới nhất, hoặc theo Tên sinh viên.
 
-## 2.2. Luồng Tạo Báo cáo (Create Daily Report)
+## 2.2. Luồng Tạo Báo cáo (Create Logbook)
 
 1. Student nhấn nút **"Tạo báo cáo"**.
 
-2. Hệ thống hiển thị Form báo cáo cho ngày hiện tại.
+2. Hệ thống hiển thị Form tạo báo cáo. Student nhập:
 
-   - *Logic chặn:* Nếu hôm nay là T7, CN hoặc Ngày lễ (cấu hình hệ thống), có thể hiển thị cảnh báo hoặc không bắt buộc nộp (tùy policy), nhưng vẫn cho phép tạo nếu sinh viên làm thêm giờ.
+   - **Ngày báo cáo (DateReport):** Bắt buộc, không được lớn hơn thời điểm hiện tại.
+   - **Tóm tắt công việc (Summary):** Bắt buộc, tối đa 200 ký tự.
+   - **Kế hoạch (Plan):** Bắt buộc, tối đa 200 ký tự.
+   - **Vấn đề gặp phải (Issue/Blockers):** Tùy chọn, tối đa 200 ký tự.
+  [Missing] - **WorkItems:** Chọn từ danh sách Issue đã tạo.
 
-3. Student nhập:
+3. Nhấn **"Nộp báo cáo"**. Hệ thống gọi API `POST /api/projects/{projectId:guid}/logbooks`.
 
-   - **Tóm tắt công việc:** Mô tả ngắn gọn những việc đã làm.
+4. Hệ thống Backend (Domain Logic) tự động kiểm tra xem `DateReport` có trùng với ngày hiện tại (`CreatedAt`) không. Nếu trùng, gán trạng thái `PUNCTUAL` (Đúng hạn), ngược lại gán `LATE` (Muộn). Dữ liệu tính toán dựa trên Server Time.
 
-   - **Issues đã làm:** Chọn/Link các task từ danh sách công việc (Jira-like linking) hoặc nhập text.
+## 2.3. Luồng Chỉnh sửa (Update) & Xóa (Delete)
 
-   - **Vấn đề gặp phải (Blockers):** (Optional).
+1. **Sửa:** Student click vào một Logbook cụ thể → Form hiện lên. Student có thể cập nhật `Summary`, `Issue`, `Plan`, `DateReport` qua API `PUT /api/projects/{projectId}/logbooks/{logbookId}`. Khi gọi Update, Backend tự xác định lại trạng thái (Đúng hạn / Muộn) tương ứng.
 
-   - **Kế hoạch ngày mai:** (Optional).
-
-4. Nhấn **"Nộp báo cáo"**.
-
-5. Hệ thống ghi nhận thời gian nộp và tự động đánh dấu "Đúng hạn" hay "Muộn" dựa trên giờ quy định (ví dụ: trước 18:00).
-
-## 2.3. Luồng Chỉnh sửa (Update)
-
-1. Student click vào báo cáo của ngày hôm nay (nếu chưa bị Mentor khóa/duyệt).
-
-2. Chỉnh sửa nội dung.
-
-3. Lưu lại (Hệ thống có thể ghi chú "Đã chỉnh sửa").
+2. **Xóa:** Student có thể thực hiện Soft Delete bản ghi qua API `DELETE /api/projects/{projectId}/logbooks/{logbookId}`.
 
 ## 2.4. Luồng Tìm kiếm & Lọc
 
-1. **Tìm kiếm:** Nhập từ khóa (tìm trong Tóm tắt công việc).
+1. **Lọc (Filter):** Student/Mentor có thể truyền tham số `Status` (tương ứng với Enum `LogbookStatus` dạng chuỗi) để lọc.
 
-2. **Lọc:**
-
-   - Theo **Trạng thái duyệt** (Đã duyệt/Chờ duyệt).
-
-   - Theo **Trạng thái nộp** (Đúng hạn/Muộn).
-
-   - Theo **Khoảng thời gian** (Từ ngày - Đến ngày).
+2. **Sắp xếp (Sort):** Chọn sắp xếp theo `studentname` hoặc `createdat` (asc/desc).
 
 ---
 
@@ -80,92 +66,79 @@ Trong mô hình thực tập doanh nghiệp, việc báo cáo tiến độ hàng
 
 ## AC-RPT-01 — Hiển thị Danh sách Báo cáo chuẩn
 
-- **Given:** Student truy cập trang Báo cáo.
+- **Given:** Student truy cập trang danh sách Logbooks.
 
-- **When:** Trang tải xong.
-
-- **Then:**
-
-  - Hiển thị đúng các cột: Ngày báo cáo (dd/MM/yyyy), Tên sinh viên, Status (Duyệt/Chưa), Tóm tắt, Issue liên quan, Thời gian nộp (HH:mm), Status nộp (Đúng hạn/Muộn).
-
-  - Mặc định sắp xếp theo ngày giảm dần (mới nhất lên đầu).
-
-  - Hiển thị Tổng số bản ghi (Total records).
-
-## AC-RPT-02 — Logic Phân trang
-
-- **Given:** Danh sách báo cáo dài &gt; 1 trang.
-
-- **When:** Student chọn hiển thị 50 bản ghi/trang hoặc chuyển trang 2.
+- **When:** Hệ thống gọi API Lấy danh sách thành công.
 
 - **Then:**
 
-  - Bảng hiển thị đúng số lượng yêu cầu.
+  - Hiển thị danh sách báo cáo bao gồm thông tin chi tiết: `StudentName`, `DateReport`, `Summary`, `Issue`, `Status` (Enum) và `TotalWorkItems`.
+  
+  - Danh sách hỗ trợ phân trang với `PageNumber` và `PageSize`.
 
-  - Dữ liệu tải lại chính xác.
+## AC-RPT-02 — Tạo Báo cáo & Logic Validation
 
-## AC-RPT-03 — Tạo Báo cáo & Đánh dấu Muộn (Late Submission)
+- **Given:** Student mở form thêm mới Logbook.
 
-- **Given:** Quy định giờ nộp là 09:00 AM sáng hôm sau (hoặc 18:00 PM cùng ngày - tùy config).
-
-- **When:**
-
-  - Student A nộp lúc 08:00 AM → Hệ thống ghi nhận "Đúng hạn" (On Time).
-
-  - Student B nộp lúc 10:00 AM → Hệ thống ghi nhận "Muộn" (Late) và highlight màu đỏ/cam.
+- **When:** Submit form gửi API Create.
 
 - **Then:**
 
-  - Bản ghi được lưu thành công.
+  - Đầu vào `ProjectId`, `Summary`, `Plan`, `DateReport` không được bỏ trống.
+  
+  - API Controller sử dụng FluentValidation trả về HTTP 400 nếu `Summary`, `Issue`, `Plan` > 200 ký tự, hoặc `DateReport` ở tương lai.
+  
+  - Nếu thành công, trả về HTTP 201 Created. Backend thực hiện ghi nhận Audit Log.
 
-  - Trạng thái nộp (Submission Status) được tính toán tự động, không cho sửa thủ công.
+## AC-RPT-03 — Cập nhật Trạng thái tự động (Auto-Status Logic)
 
-## AC-RPT-04 — Link Issue (Liên kết công việc)
+- **Given:** Student gửi yêu cầu tạo hoặc chỉnh sửa Logbook.
 
-- **Given:** Student đang làm việc trên các task ID-101, ID-102.
+- **When:** Backend tiếp nhận thông tin lưu trữ.
 
-- **When:** Tạo báo cáo.
+- **Then:**
+
+  - Status (PUNCTUAL hay LATE) phải được quyết định tại Domain Entity (`Logbook.DetermineStatus()`) bằng cách so sánh `DateReport.Date` và `CreatedAt.Date` (Server UTC time). Sẽ không cho phép User truyền tham số ép buộc thay đổi Status từ Client.
+
+## AC-RPT-04 — WorkItem Relation Link (TotalWorkItems)
+
+- **Given:** Sinh viên xem danh sách báo cáo.
+
+- **When:** Một Logbook được trả về.
 
 - **Then:**
 
   - Có trường chọn "Issue đã làm" cho phép search và chọn các task đang có trong dự án.
+  [Missing] - Hiển thị số lượng Task liên kết với báo cáo trong trường `TotalWorkItems` (chỉ đếm, API Create/Update mặc định hiện tại chưa hỗ trợ móc nối thêm trực tiếp).
 
-  - Khi xem danh sách báo cáo, cột "Issue đã làm" hiển thị các mã task (click vào sẽ mở chi tiết task đó).
+## AC-RPT-05 — Logic ngày nghỉ [Missing]
 
-## AC-RPT-05 — Logic Ngày nghỉ (Weekend/Holiday)
+- **Given:** Sinh viên tạo báo cáo vào ngày nghỉ.
 
-- **Given:** Hôm nay là Thứ 7 hoặc Chủ Nhật.
-
-- **When:** Student vào trang báo cáo.
-
-- **Then:**
-
-  - Hệ thống không bắt buộc (không hiện cảnh báo đỏ "Chưa nộp") cho ngày này.
-
-  - Vẫn cho phép nút "Tạo báo cáo" hoạt động (trường hợp làm bù hoặc OT).
-
-  - Các báo cáo tạo vào ngày nghỉ không bị tính là "Muộn" dù nộp giờ nào (Tùy rule dự án, thường là vậy).
-
-## AC-RPT-06 — Tìm kiếm & Filter
-
-- **Given:** Student muốn xem lại các báo cáo bị muộn tháng trước.
-
-- **When:**
-
-  - Filter Status nộp = "Muộn".
-
-  - Filter Date Range = "Tháng trước".
+- **When:** Hệ thống ghi nhận báo cáo.
 
 - **Then:**
 
-  - Danh sách chỉ hiển thị các báo cáo thỏa mãn.
+  [Missing] - Hệ thống phải kiểm tra xem ngày báo cáo có phải là ngày nghỉ không.
+  [Missing] - Nếu là ngày nghỉ, hệ thống phải đánh dấu báo cáo là "Nghỉ" và không tính là báo cáo hàng ngày.
+
+## AC-RPT-06 — Bảo mật Endpoint
+
+- **Given:** Bất kỳ endpoint Logbook nào.
+
+- **When:** Đầu cuối nhận Request.
+
+- **Then:**
+
+  - API phải yêu cầu `[Authorize]`. User phải liên kết tới `Student` Entity. Trả về `ResultErrorType.Unauthorized` nếu profile không phải Student hợp lệ.
 
 ---
 
 ## 4. Đặc tả kỹ thuật (Technical Notes)
 
-- **Holiday Calendar:** Cần có một bảng cấu hình hoặc API trả về danh sách ngày lễ (Holiday) để Frontend/Backend check logic "Ngày làm việc".
-
-- **Auto-Status Logic:** Logic check "Đúng hạn/Muộn" nên thực hiện ở Backend dựa trên `server_time` khi nhận request để đảm bảo công bằng (tránh trường hợp Student chỉnh giờ máy client).
-
-- **Submission Deadline:** Cần cấu hình được Deadline (ví dụ: `18:00:00`) trong DB cấu hình dự án.
+- **Domain Driven Design:** Entity `Logbook` áp dụng tốt `Factory Method` Pattern thông qua phương thức `Logbook.Create()` đóng gói hoàn chỉnh logic Status, thoả mãn kiến trúc FFA-CAG.
+- **Transaction & Audit:** Transaction Blocked `BeginTransactionAsync`, `CommitTransactionAsync` kết hợp cùng `AuditLog` tạo vết lưu vết kiểm toán rất tốt (Thỏa mãn FFA-TXG).
+- **Status Value:** `LogbookStatus` định nghĩa bằng Enum (`0: SUBMITTED`, `1: APPROVED`, `2: NEEDS_REVISION`, `3: PUNCTUAL`, `4: LATE`). Việc Filter Status dựa trên Enum Parse case-insensitive.
+- **[⚠️ Architecture Violation]:** Tại Handler `GetLogbooksHandler`, API hiện tại cho phép lấy **toàn bộ** danh sách báo cáo của cả Project mà không giới hạn quyền, nghĩa là mọi nhóm / mentor trong dự án cũng có thể đọc trừ khi Controller/Handler bổ sung Custom Permission (VD check `StudentId` hoặc policy phù hợp). Tương tự, thao tác Delete không kiểm tra `LogbookId` đó có phải của sinh viên gọi hay không, dẫn đến rủi ro xoá chéo dữ liệu của bạn học. Cần bổ sung Role/RBAC hoặc Data Isolation validation.
+- API Route: `GET|POST|PUT|DELETE /api/projects/{projectId:guid}/logbooks` là thiết kế URL RESTful chuẩn (chứa cha là project -> con là logbooks).
+[Missing] - **Holiday Calendar** - Cần có danh sách ngày nghỉ của dự án để kiểm tra xem ngày báo cáo có phải là ngày nghỉ không.
