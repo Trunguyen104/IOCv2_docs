@@ -513,7 +513,19 @@ Các nhóm MessageKeys hiện có: `Common`, `Password`, `ResetPassword`, `Auth`
 | **Parameter / Local variable** | camelCase | `cancellationToken`, `parsedRole`, `query` |
 | **Constant** | PascalCase (trong nested static class) | `MessageKeys.Users.NotFound` |
 | **Enum member** | PascalCase | `UserRole.SuperAdmin`, `UserStatus.Active` |
+| **Enum member** | PascalCase | `UserRole.SuperAdmin`, `UserStatus.Active` |
 | **Enum with backing type** | Khai báo rõ kiểu `: short` | `public enum UserRole : short` |
+| **Enum at API Boundary** | **Bắt buộc dùng `string`** | `public string Role { get; init; }` |
+
+### 7.1.1. Quy tắc xử lý Enum (Mandatory)
+
+Để đảm bảo khả năng mở rộng và tính tương thích cao với Frontend/Third-party:
+1. **Request/Response DTO**: KHÔNG ĐƯỢC để Enum dưới dạng số (Integer). Mọi property Enum phải được khai báo là `string`.
+2. **Validation**: Sử dụng `IsEnumName<TEnum>(bool caseSensitive)` của FluentValidation để kiểm tra tính hợp lệ của string input.
+3. **Database**: EF Core vẫn lưu trữ Enum dưới dạng `short`/`int` để tối ưu hiệu năng. Việc chuyển đổi (Mapping) sẽ diễn ra ở tầng Application.
+4. **Mapping**: 
+   - Từ Request String -> Domain Enum: Dùng `Enum.Parse<TEnum>()`.
+   - Từ Domain Enum -> Response String: Dùng `.ToString()`.
 
 ### 7.2. Namespace & File Structure
 
@@ -1028,6 +1040,7 @@ namespace IOCv2.Application.Features.[Module].[Entity].Commands.[Action][Entity]
 public record [Action][Entity]Command : IRequest<Result<[Action][Entity]Response>>
 {
     public string PropertyName { get; init; } = null!;
+    public string Status { get; init; } = null!; // Enum dạng string
     public Guid? OptionalId { get; init; }
 }
 ```
@@ -1107,12 +1120,14 @@ public class [Action][Entity]Response : IMapFrom<[DomainEntity]>
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty; // Enum dạng string
 
-    // Custom mapping (nếu cần)
+    // Custom mapping
     public void Mapping(MappingProfile profile)
     {
         profile.CreateMap<[DomainEntity], [Action][Entity]Response>()
-            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FullName));
+            .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FullName))
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString())); // Chuyển Enum sang String
     }
 }
 ```
@@ -1199,4 +1214,4 @@ public class [Entity]Controller : ApiControllerBase
 ---
 
 _Tài liệu này được cập nhật cho dự án Internship OneConnect (IOC) v2.0._
-_Cập nhật lần cuối: 24/02/2026._
+_Cập nhật lần cuối: 04/03/2026._
