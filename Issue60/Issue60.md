@@ -1,160 +1,119 @@
 # 1. Tổng quan & Bối cảnh (Overview & Context)
 
 ## 1.1 Vấn đề (Problem)
-Hiện tại, hệ thống IOC cần quản lý các kỳ thực tập (Term) một cách tập trung và có cấu trúc để:
-- Định nghĩa rõ ràng các kỳ thực tập theo từng trường học (thời gian bắt đầu, kết thúc, trạng thái).
-- Gắn kết sinh viên, doanh nghiệp, nhóm thực tập và các luồng đánh giá vào đúng kỳ thực tập tương ứng.
-- Kiểm soát vòng đời của kỳ thực tập: từ khởi tạo (Upcoming) → đang hoạt động (Active) → kết thúc tự nhiên (Ended) → đóng (Closed).
-- Đảm bảo dữ liệu thực tập không bị rải rác hoặc nhầm lẫn giữa các kỳ khác nhau.
+Hiện tại, hệ thống IOC cần quản lý các kỳ thực tập (Term) một cách tập trung. Nếu thiếu đi cốt lõi này, toàn bộ dữ liệu (sinh viên, doanh nghiệp, kết quả đánh giá) sẽ bị rải rác, không có ranh giới chu kỳ và không thể thống kê chính xác theo từng giai đoạn học tập.
 
-## 1.2 Pain Points hiện tại
-- Chưa có màn hình tập trung để tạo và quản lý kỳ thực tập.
-- Không kiểm soát được vòng đời kỳ thực tập: kỳ đã kết thúc vẫn có thể bị nhầm lẫn với kỳ hiện tại.
-- Sinh viên, HR/Mentor không có nơi tra cứu thông tin kỳ thực tập đang diễn ra.
-- Dữ liệu gán doanh nghiệp, nhóm thực tập, đánh giá không được ràng buộc rõ ràng với một kỳ thực tập cụ thể.
-- Không có cơ chế xóa kỳ thực tập tạo nhầm, dẫn đến rác dữ liệu.
+## 1.2 Giá trị Nghiệp vụ (Business Value)
+- **Tạo nền móng dữ liệu**: Kỳ thực tập (Term) là Container chứa toàn bộ hoạt động thực tập. Khi vòng đời kỳ thực tập rõ ràng (Draft $\to$ Open $\to$ Closed), các luồng nghiệp vụ khác tự động vận hành trơn tru.
+- **Ràng buộc thời gian hợp lệ**: Kiểm soát chặt chẽ `start_date` và `end_date` ngăn chặn việc gán sinh viên hoặc điểm số vào sai thời điểm.
 
-## 1.3 Giá trị Nghiệp vụ (Business Value)
-- **Quản lý vòng đời**: Uni Admin tạo, theo dõi, cập nhật, đóng và mở lại kỳ thực tập.
-- **Dữ liệu sạch & cấu trúc**: Các luồng nghiệp vụ (gán doanh nghiệp, báo cáo...) hoạt động chính xác theo từng kỳ. Soft delete dọn rác.
-- **Minh bạch**: Phân quyền truy cập rõ ràng và hỗ trợ tra cứu dễ dàng cho Student và HR.
-- **Kiểm soát quy trình**: Đóng kỳ thực tập để chốt sổ, ngăn chặn thay đổi.
-
-## 1.4 Đối tượng (Actor)
-- **Primary Actor: Quản trị viên trường (Uni Admin)**: Tạo, xem, cập nhật, khóa/mở, xóa dữ liệu kỳ. Thực hiện các thao tác quản lý vòng đời.
-- **Secondary Actors:**
-  - **Student (Sinh viên)**: Xem thông tin kỳ thực tập áp dụng cho mình (Chỉ đọc).
-  - **HR / Mentor**: Xem thông tin kỳ liên quan đến doanh nghiệp/nhóm thực tập (Chỉ đọc).
+## 1.3 Đối tượng (Actor)
+- **Primary Actor**: Uni Admin - Người quản lý và tạo lập các kỳ thực tập của trường học mình.
+- **Secondary Actor**: Không có.
 
 ---
 
 # 2. Luồng Người dùng (User Flow)
 
-## 2.1 Luồng Quản lý danh sách
-1. **Đăng nhập**: Uni Admin đăng nhập thành công.
-2. **Truy cập**: Điều hướng tới trang "Quản lý Kỳ thực tập".
-3. **Hiển thị**: Hệ thống hiển thị danh sách các kỳ thực tập của trường (hỗ trợ phân trang, tìm kiếm, lọc theo Trạng thái & Năm, sắp xếp).
+## 2.1 Luồng Quản lý danh sách Kỳ thực tập
+1. `Uni Admin` đăng nhập tài khoản.
+2. Tại menu hệ thống, truy cập "Quản lý Kỳ thực tập".
+3. Giao diện gọi API hiển thị bảng dữ liệu chứa danh sách các Kỳ, kèm các bộ lọc (Filter) cơ bản và nút Add New.
 
-## 2.2 Luồng Tạo mới Kỳ thực tập
-1. **Thao tác**: Từ trang danh sách, Uni Admin click "Tạo kỳ thực tập". Hệ thống mở Modal nhập liệu.
-2. **Nhập liệu**: Điền Tên kỳ thực tập, Ngày bắt đầu, Ngày kết thúc.
-3. **Xử lý**: Hệ thống validate dữ liệu (không trùng tên, độ dài, ngày hợp lệ, không overlap với kỳ đang diễn ra).
-4. **Kết quả**: Tạo thành công, trạng thái ban đầu là `Upcoming` hoặc `Active`. Danh sách cập nhật.
+## 2.2 Luồng Khởi tạo Kỳ thực tập (Create)
+1. Từ trang danh sách, click "Thêm kỳ thực tập".
+2. Điền Form nhập liệu: Tên kỳ (`name`), Ngày bắt đầu (`start_date`), Ngày kết thúc (`end_date`), và Trạng thái khởi tạo (VD: Draft hoặc Open).
+3. Validate dữ liệu: `end_date` phải lớn hơn `start_date`.
+4. Gọi API Create, hệ thống thêm mới dữ liệu và hiển thị Toast "Tạo mới thành công".
 
-## 2.3 Luồng Xem Chi tiết & Chỉnh sửa
-1. **Xem chi tiết**: Nhấp vào "Xem chi tiết" để xem toàn bộ thông tin, timeline, enrollment summary.
-2. **Chỉnh sửa**: 
-   - Nếu kỳ `Upcoming`/`Closed`: Cho phép đổi Tên, Start Date, End Date.
-   - Nếu kỳ `Active`/`Ended`: Start Date bị khóa (Read-only).
-   - Validation & Optimistic Locking kiểm tra song song trước khi ghi đè dữ liệu.
+## 2.3 Luồng Cập nhật & Thay đổi Trạng thái (Update/Patch)
+1. `Uni Admin` chọn 1 Kỳ thực tập đang ở trạng thái `Draft` hoặc `Open`.
+2. Có thể đổi trạng thái (Từ `Draft` $\to$ `Open`, hoặc `Open` $\to$ `Closed`). Khi chuyển sang `Closed` (Đóng kỳ), sinh viên sẽ không thể Enroll được nữa.
+3. Edit trực tiếp Tên và Ngày tháng (chỉ khi kỳ chưa đóng).
 
-## 2.4 Luồng Đóng/Mở lại & Xóa
-1. **Đóng kỳ**: Với kỳ `Active`/`Ended`, Uni Admin chọn "Đóng kỳ", qua cảnh báo, đổi trạng thái thành `Closed`. Khóa toàn bộ dữ liệu enrollment bên trong.
-2. **Mở lại kỳ**: Với kỳ `Closed`, Uni Admin chọn "Mở lại", hệ thống kích hoạt về `Active` để mở sửa chữa dữ liệu nội bộ.
-3. **Xóa kỳ**: Chỉ hỗ trợ cho kỳ `Upcoming`. Xác nhận cảnh báo soft-delete. Đánh dấu xóa và ẩn khỏi view.
+## 2.4 Luồng Xóa Kỳ thực tập (Delete)
+1. Uni Admin chọn "Xóa" một kỳ mới tạo nhầm.
+2. Hệ thống cảnh báo.
+3. Nếu tiếp tục, xóa và tải lại danh sách. (Lưu ý: Không cho phép xóa nếu đã có dữ liệu ràng buộc bên trong).
 
 ---
 
 # 3. Tiêu chí Chấp nhận (Acceptance Criteria)
 
-## AC-01: Hiển thị & Quản lý Danh sách Kỳ thực tập
-- **Given:** Uni Admin truy cập trang "Quản lý Kỳ thực tập".
-- **When:** Dữ liệu tải trang hoàn tất.
-- **Then:**
-  - Hiển thị danh sách bảng: Tên, Ngày bắt đầu, Ngày kết thúc, Trạng thái (Upcoming/Active/Ended/Closed), Số lượng SV (Enrolled, Placed, Unplaced).
-  - Phân trang 10/20/50 bản ghi. Mặc định 10.
-  - Hỗ trợ Tìm kiếm theo tên (debounce 300ms).
-  - Dễ dàng Lọc theo năm của startDate, Trạng thái.
-  - Sắp xếp asc/desc dựa trên các header.
-  - **[UI/UX]** Trạng thái trống (Empty state) khi không có dữ liệu với nút "Tạo kỳ thực tập".
+## AC-01: Hiển thị giao diện danh sách
+- **Given**: Quyền `UniAdmin` đã login.
+- **When**: Mở trang "Quản lý Kỳ thực tập".
+- **Then**:
+  - Load danh sách có phân trang (Pagination).
+  - Bảng hiển thị: Tên kỳ, Ngày bắt đầu, Ngày kết thúc, Trạng thái (Nháp/Mở/Đóng).
+  - Có các Action: Create, Edit, State Toggle (Open/Close), Delete.
 
-## AC-02: Tạo mới Kỳ thực tập thành công
-- **Given:** Uni Admin mở Modal "Tạo kỳ thực tập".
-- **When:** Nhập đầy đủ & hợp lệ Tên kỳ (<= 255 ký tự), Ngày bắt đầu (>= hôm nay), Ngày kết thúc (> Ngày bắt đầu) và click "Lưu".
-- **Then:**
-  - Tạo dữ liệu thành công, model ẩn. Hệ thống thông báo toast-message thành công.
-  - Tự động gán trạng thái `Upcoming` hoặc `Active` tùy ngày.
-  - Render lại danh sách bản ghi.
+## AC-02: Thêm mới Kỳ thực tập
+- **Given**: Pop-up Create đang mở.
+- **When**: Nhập đầy đủ & hợp lệ các thông tin và ấn Save.
+- **Then**:
+  - Giao diện render thẻ mới. Bắn thông báo xanh "Thành công".
+  - Backend lưu chính xác UUID của User (Trường) vào cột `university_id`.
 
-## AC-03: Cập nhật Kỳ thực tập & Xác thực Dữ liệu
-- **Given:** Uni Admin mở Modal "Chỉnh sửa".
-- **When:** Admin thay đổi dữ liệu hoặc nhấn lưu.
-- **Then:**
-  - Nếu kỳ `Active`/`Ended`: `startDate` bị disabled, không cho thao tác.
-  - Xảy ra lỗi validation (400 Bad Request) nếu:
-    - Bỏ trống bất kỳ trường bắt buộc.
-    - `endDate` < `startDate`.
-    - Trùng tên với một kỳ thực tập khác trong trường.
-    - Trùng khoảng thời gian (overlap) với kỳ đang active của trường.
-  - Hệ thống tính toán lại trạng thái tự động dựa trên date.
+## AC-03: Ràng buộc Validation đầu vào
+- **Given**: Input đang sửa hoặc tạo.
+- **When**: Nhập `end_date` nhỏ hơn `start_date`, hoặc Tên bị bỏ trống.
+- **Then**:
+  - API cản bước, báo lỗi `400 Bad Request` kèm `{"endDate": "Ngày kết thúc phải lớn hơn ngày bắt đầu"}`.
 
-## AC-04: Đóng & Mở lại Kỳ thực tập
-- **Given:** Kỳ thực tập đã tồn tại.
-- **When:** Admin thực thi thao tác tương ứng theo quyền.
-- **Then:**
-  - Nút **Đóng kỳ**: Chỉ xuất hiện tại `Active`, có cảnh báo khi còn SV `unplaced`. Sau khi đóng -> `Closed` -> Không thể enroll/import sinh viên.
-  - Nút **Mở lại kỳ**: Chỉ xuất hiện tại `Closed`. Sau khi mở -> `Active` -> Các tính năng enrollment trở lại bình thường.
+## AC-04: Luồng khóa/Mở (Close/Open)
+- **Given**: Một Term đang `Open`.
+- **When**: Chuyển trạng thái sang `Closed`.
+- **Then**:
+  - Giao diện update trạng thái. Bắn API Update trạng thái.
+  - Term từ trạng thái này sẽ bị khóa các liên kết (Tự backend chặn ở các module khác).
 
-## AC-05: Xóa Kỳ thực tập (Soft-Delete)
-- **Given:** Một kỳ thực tập ở trạng thái `Upcoming`.
-- **When:** Admin ấn nút "Xóa" và vượt qua bước "Xác nhận xóa".
-- **Then:**
-  - Nếu đã có dữ liệu bên trong (student, placement): Gói lệnh Xóa 2 lớp, cần xác nhận: `"Toàn bộ dữ liệu liên quan sẽ bị giấu. Không thể hoàn tác."`
-  - Hành động API chỉ thực hiện **soft delete** (`isDeleted=true`, update `deletedAt`, `deletedBy`). 
-  - Ẩn hoàn toàn khỏi query hiển thị của application.
-  - Khóa API không cho phép xóa đối với trạng thái `Active`/`Ended`/`Closed`.
-
-## AC-06: Quyền Truy Cập (Authorization Control)
-- **Given:** Người dùng cố truy cập API hoặc UI.
-- **When:** Tương tác tạo/sửa/xóa/xem danh sách Term.
-- **Then:**
-  - Uni Admin chỉ được phép tác động lên Term thuộc trường của mình. Truy cập Term khác -> 403 Forbidden.
-  - Các roles như Student, Mentor, HR/Enterprise không có nút thao tác. Call direct API trả về 403 Forbidden.
+## AC-05: Chống thao tác quyền chéo (Security)
+- **Given**: Admin của Trường A.
+- **When**: Bằng cách nào đó dùng Postman truyền UUID của Term Trường B vào API Sửa/Xóa.
+- **Then**:
+  - Backend đối chiếu Claim, nhả `403 Forbidden` do vi phạm "Data Ownership" (Mất quyền).
 
 ---
 
 # 4. Đặc tả Kỹ thuật (Technical Specifications)
 
-Dựa theo chuẩn **FFA Framework (IOCv2 Agent Skills)**:
+Dựa theo chuẩn **FFA Framework (IOCv2 Agent Skills)** và ERD **DB.md**:
 
-## 4.1 Danh sách API Endpoints Bắt buộc
+## 4.1 Danh sách API Endpoints
 
-| API Endpoint | Method | Path | Request Variables | Response Structure (Thành công 200/201) | Mã lỗi dự kiến |
+| API Endpoint | Method | Path | Request Body / Query | Response Structure (JSON) | Status Codes & Messages |
 | --- | --- | --- | --- | --- | --- |
-| Lấy danh sách kỳ thực tập | **GET** | `/api/terms` | *Query*: `page`, `pageSize`, `search`, `status`, `year`, `sortBy`, `sortDir` | `[ { termId, name, startDate, endDate, status, stats: { enrolled, placed, unplaced } } ]` | **401 Unauthorized**<br>**403 Forbidden**<br>**429 Too Many Requests** |
-| Xem chi tiết kỳ thực tập | **GET** | `/api/terms/{termId}` | *Path*: `termId` | `{ termId, name, startDate, endDate, status, version, createdAt, createdBy,... }` | **400 Bad Request**<br>**404 Not Found**<br>**403 Forbidden** |
-| Tạo mới kỳ thực tập | **POST** | `/api/terms` | *Body*: `name`, `startDate`, `endDate` | `{ termId, status, message: "Created successfully" }` (201 Created) | **400 Bad Request** (Validation Error)<br>**403 Forbidden** |
-| Cập nhật kỳ thực tập | **PUT** | `/api/terms/{termId}` | *Path*: `termId`<br>*Body*: `name`, `startDate`, `endDate`, `version` | `{ termId, message: "Updated successfully" }` | **400 Bad Request**<br>**404 Not Found**<br>**409 Conflict** (Optimistic Lock)<br>**403 Forbidden** |
-| Đóng kỳ thực tập | **PATCH** | `/api/terms/{termId}/close` | *Path*: `termId`<br>*Body*: `version` | `{ message: "Term closed successfully" }` | **400 Bad Request**<br>**404 Not Found**<br>**409 Conflict** |
-| Mở lại kỳ thực tập | **PATCH** | `/api/terms/{termId}/reopen`| *Path*: `termId`<br>*Body*: `version` | `{ message: "Term reopened successfully" }` | **400 Bad Request**<br>**404 Not Found**<br>**409 Conflict** |
-| Xóa kỳ thực tập | **DELETE** | `/api/terms/{termId}` | *Path*: `termId` | `{ message: "Term deleted successfully" }` | **400 Bad Request** (Lỗi khi cố xóa kỳ Active)<br>**404 Not Found**<br>**403 Forbidden** |
+| Lấy danh sách Term | **GET** | `/api/terms` | Query: `searchTerm`, `status` (int), `pageIndex`, `pageSize` | `{ data: [ { termId, name, startDate, endDate, status } ], totalCount }` | **200 OK**<br>**403 Forbidden** |
+| Xem chi tiết Term | **GET** | `/api/terms/{termId}` | Path: `termId` (uuid) | `{ termId, name, startDate, endDate, status }` | **200 OK**<br>**404 Not Found**<br>**403 Forbidden** |
+| Thêm mới Term | **POST** | `/api/terms` | `{ name, startDate, endDate, status }` | `{ termId }` | **201 Created**<br>**400 Bad Request**<br>**403 Forbidden** |
+| Cập nhật Term | **PUT** | `/api/terms/{termId}` | `{ name, startDate, endDate }` | `204 No Content` | **204**<br>**400**<br>**404 Not Found** |
+| Đổi trạng thái | **PATCH** | `/api/terms/{termId}/status` | `{ status: smallint }` | `204 No Content` | **204**<br>**400**<br>**404 Not Found** |
+| Xóa cứng Term | **DELETE** | `/api/terms/{termId}` | Chạy thao tác DELETE Entity | `204 No Content` | **204**<br>**400 / 409 Conflict** (Có data)<br>**403 Forbidden** |
 
-*[⚠️ Architecture Violation]: Đảm bảo việc kiểm tra Version để xử lý Xung đột dữ liệu (Optimistic Locking) được áp dụng đồng bộ trong tất cả các API thay đổi trạng thái và chỉnh sửa Term.*
+## 4.2 [⚠️ DB Mismatch] Cảnh báo Lệch chuẩn Mô hình ERD
 
-## 4.2 [FFA-ACV] & [FFA-ERR] Validation & Error Handling
-- **Request Validation (Sử dụng FluentValidation cho các Command)**:
-  - Tham số `termId` trên URL Route bắt buộc là UUID (GUID) hợp lệ. Nếu sai định dạng lập tức trả về `400 Bad Request`.
-  - `Name`: `NotNull`, `NotEmpty`, `MaximumLength(255)`, không chứa ký tự script ngầm (Regex filter cơ bản chống XSS).
-  - `StartDate`, `EndDate`: Bắt buộc. Logic kiểm tra `EndDate > StartDate` phải được xử lý chặt ở BE.
-  - Khi Create mới: `StartDate >= Date.UtcNow.Date`
-- **Global Exception Filter**:
-  - Validation failures văng Exception và được bọc thành HTTP `400 Bad Request` chứa message cụ thể từng trường bị lỗi (Ví dụ: `{"Name": ["Tên kỳ thực tập không được để trống"]}`).
-  - Lỗi không tìm thấy `TermId` trả `404 Not Found`.
+Dựa vào cấu trúc `DB.md`, có **3 điểm sai lệch** khổng lồ cần DBA và Backend giải quyết nếu bám theo yêu cầu Issue gốc (hiện đã được tôi chỉnh lý cho chuẩn với ERD DB):
+1. **Trạng thái Trôi nổi (Status Not Mapped)**: Issue gốc yêu cầu trạng thái "Upcoming, Active, Ended, Closed". Nhưng bảng `terms` trong `DB.md` chỉ có ghi chú `status smallint // 0=Draft,1=Open,2=Closed`. Hệ thống sẽ bám theo DB ERD (Draft/Open/Closed) thay vì chia vặt như requirement cũ.
+2. **Thiếu cơ chế Soft-delete (IsDeleted)**: Yêu cầu cũ bắt buộc "Hành động API chỉ thực hiện soft delete: isDeleted=true, update deletedAt, deletedBy". Tuy nhiên bảng `terms` KHÔNG HỀ CÓ bất kỳ cột nào thuộc loại này (Chỉ có created_at, updated_at). Thay vì phá vỡ nguyên lý DB, tôi đã thiết kế thành hành động **Xóa cứng (Physical Delete)** nếu Term chưa có liên kết nào, và trả `400 / 409 Conflict` nếu đang có Entity reference đến nó (FK ràng buộc).
+3. **Thiếu Optimistic Locking (Version)**: Yêu cầu cũ bắt kiểm tra đồng thời (Concurrency Control) thông qua `Version`. Bảng `terms` không hề có cột RowVersion. Tôi đã gạt bỏ qua ràng buộc Version này cho đồng nhất với năng lực DB.
 
-## 4.3 [FFA-TXG] Validation Nghiệp vụ & Locking
-- Entity `Term` phải duy trì thuộc tính `Version` (RowVersion / Guid) để đảm bảo an toàn ghi đè dữ liệu sửa/xóa đồng thời. 
-- Mọi thao tác ghi đè (PUT, PATCH) cần mang theo `version`. So khớp thất bại sẽ ném lỗi dẫn đến kết quả trả về `409 Conflict`.
-- Hành động `DELETE` không xóa cứng ở Database. Backend chuyển `isDeleted = true`, lưu vết `deletedBy`, `deletedAt` (Soft Delete).
+## 4.3 [FFA-ACV] Quy tắc Validation Data
+
+- **Validation Rules**:
+  - `name`: Tên bắt buộc (`Required`), `MaxLength(100)` bám vào schema DB.
+  - `start_date`, `end_date`: Cần định dạng chuẩn. Backend bắt buộc kiểm tra `end_date` > `start_date`. Nếu sai trả mã lỗi **400 Bad Request** kèm thông điệp.
+- Kiểm tra tính duy nhất (Unique Title) dù DB không cấm trùng lặp để thoải mái đặt tên, nhưng có thể bổ sung check trùng nếu Domain cần. (Option).
 
 ## 4.4 [FFA-SEC] Authentication & Authorization
-- **Authentication**: Bắt buộc mọi API có header `Authorization: Bearer <token>`.
-- **Authorization**: `[Authorize(Roles = "UniAdmin")]` tại Controller Term. Trả `403 Forbidden` với message: *"Bạn không có quyền thực hiện hành động này"* nếu ROLE sai.
-- **Cross-Check Ownership**: Admin chỉ có thể tác động các Term nằm trong cùng `UniversityId` của họ. Xử lý Exception này tại Handler và trả về lỗi quyền `403 Forbidden`.
+
+- **Ràng buộc Phân Quyền (RBAC)**: Gắn Attribute `[Authorize(Roles = "UniAdmin")]` vào tất cả các Endpoint nhóm `/api/terms` để Role Student hay Mentor không thể xem, sửa hoặc xóa.
+- **Ownership Identity (Chống IDOR ngầm)**:
+  - Khai thác trích xuất JWT Token. Handler trong kiến trúc CQRS phải bóc ra `Token.UniversityId` (Từ bảng `university_users`).
+  - Toàn bộ thao tác GET List / Chi tiết / Sửa / Xóa bắt buộc móc theo điều kiện Filter ngầm: `Where(x => x.term_id == request.TermId && x.university_id == currentUser.UniversityId)`. Ném thẳng `403 Forbidden Access` nếu UUID không khớp (đừng văng 404). Việc User A xóa term trường B là bất khả thi.
 
 ## 4.5 [FFA-PERF] Cấu hình Rate Limit
-- **Read APIs Rate Limit (GET)**: IP-based Rule Rate Limit.
-  - Config: **60 requests / 1 phút / IP**.
-- **Write APIs Rate Limit (POST, PUT, PATCH, DELETE)**: IP-based Rule áp dụng chặt chẽ hơn để chống SPAM.
-  - Config: **20 requests / 1 phút / IP**.
-- Vi phạm Limit sẽ bị middleware chặn và trả về lỗi `429 Too Many Requests`.
-- Kết hợp Pagination & Database Indexes (`UniversityId`, `Status`, `StartDate`) trên Store Procedures/EF. Core. Không trả Entity đầy đủ qua Response, sử dụng DTO/ViewModel.
+
+- **Mutate APIs Rate Limit (POST, PUT, PATCH, DELETE)**: Tấn công Spam dữ liệu Master vô cùng nhạy cảm. Config mức `20 requests / 1 phút / IP` để bảo vệ năng lực Database Write.
+- **Read APIs Rate Limit (GET)**: Giao diện danh sách (GET) rate limit nhỉnh hơn: `60 requests/phút`. 
+- Endpoint lấy danh sách List GET, đi kèm Pagination `.Skip().Take()` BẮT BUỘC gắn thêm `.AsNoTracking()` trong Entity Framework Core bởi vì List danh sách chỉ nhằm show Grid Data (Read only), không tracking States.
