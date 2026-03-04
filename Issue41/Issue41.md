@@ -75,19 +75,19 @@ Dựa theo chuẩn **FFA Framework (IOCv2 Agent Skills)**:
 
 | API Endpoint | Method | Path | Request Variables | Response Structure (Thành công 200 OK) | Mã lỗi dự kiến |
 | --- | --- | --- | --- | --- | --- |
-| Lấy danh sách chu kỳ đánh giá của SV | **GET** | `/api/v1/evaluations/cycles` | *Query*: `projectId` (tùy chọn lọc nếu SV thuộc nhiều dự án) | `[ { cycleId, name, startDate, endDate, status, gradedCount, totalCount } ]` | **401 Unauthorized**<br>**429 Too Many Requests** |
-| Xem danh sách sinh viên đánh giá trong chu kỳ | **GET** | `/api/v1/evaluations/cycles/{cycleId}` | Không | `{ cycleInfo: {...}, students: [ { studentId, fullName, isGraded, gradedAt, totalScore } ] }` | **400 Bad Request** (Lỗi Validator)<br>**404 Not Found** (Không tìm thấy chu kỳ) |
-| Lấy chi tiết phiếu điểm cá nhân | **GET** | `/api/v1/evaluations/cycles/{cycleId}/students/{studentId}` | Không | `{ studentId, cycleId, totalScore, feedback, criteriaScores: [ { criteriaName, score, maxScore, comments } ] }` | **403 Forbidden** (Truy cập điểm người khác)<br>**404 Not Found** (Chưa có điểm) |
+| Lấy danh sách chu kỳ đánh giá của SV | **GET** | `/api/evaluations-cycles` | *Query*: `projectId` | `[ { cycleId, name, startDate, endDate, status, gradedCount, totalCount } ]` | **401 Unauthorized**<br>**429 Too Many Requests** |
+| Xem danh sách sinh viên đánh giá trong chu kỳ | **GET** | `/api/evaluations-cycles/{cycleId}` | Không | `{ cycleInfo: {...}, students: [ { studentId, fullName, isGraded, gradedAt, totalScore } ] }` | **400 Bad Request** (Lỗi Validator)<br>**404 Not Found** (Không tìm thấy chu kỳ) |
+| Lấy chi tiết phiếu điểm cá nhân | **GET** | `/api/evaluations-cycles/{cycleId}/students/{studentId}` | Không | `{ studentId, cycleId, totalScore, feedback, criteriaScores: [ { criteriaName, score, maxScore, comments } ] }` | **403 Forbidden** (Truy cập điểm người khác)<br>**404 Not Found** (Chưa có điểm) |
 
 *[⚠️ Architecture Violation]: Đảm bảo Entity `EvaluationCycle` có lưu trữ mối quan hệ với `Project`/`Term`, BE cần logic trích xuất `StudentId` từ `JWT Token` để lọc ra đúng dữ liệu danh sách thuộc về sinh viên đó, tránh việc list ra chu kỳ của người khác.*
 
-## 4.2 [FFA-ACV] \u0026 [FFA-ERR] Validation \u0026 Response Data
+## 4.2 [FFA-ACV]  [FFA-ERR] Validation  Response Data
 - **Request Validation**:
   - Tham số `cycleId` và `studentId` trên URL Route bắt buộc là UUID hợp lệ. Nếu sai định dạng lập tức văng Exception -> Xử lý thành **400 Bad Request**.
 - **Data Protection ở Endpoint List Sinh Viên (`cycles/{cycleId}`)**:
   - Trường `totalScore` trong mảng `students` nếu bản ghi không thuộc về `CurrentUser.Id` thì Backend **BẮT BUỘC** gán giá trị thành `null` trước khi send Response cục bộ (ngăn lộ qua tools Network Dumper).
 
-## 4.3 [FFA-SEC] Authentication \u0026 Authorization
+## 4.3 [FFA-SEC] Authentication  Authorization
 - Ràng buộc Authentication (bắt buộc Login): Thêm Header `[Authorize(Roles = "Student")]` trên controller.
 - **Authorization Cross-Check (Tầng Handler)**:
   - Ở Query `GetEvaluationDetailQueryHandler` lấy Phiếu điểm cá nhân, thực hiện logic: `if (currentUser.Id != request.StudentId) throw new ForbiddenAccessException("Bạn không có quyền xem chi tiết điểm của người khác");`

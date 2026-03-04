@@ -126,7 +126,7 @@ Hệ thống IOC có 3 đối tượng người dùng chính (Nhà trường, Do
 
   - Request tự động đính kèm Token dựa vào Cookies, hoặc được client gửi kèm Header `Authorization: Bearer <token>`.
 
-  - Nếu Token hết hạn (Expired), hệ thống có thể gọi `/api/v1/auth/tokens/refresh` để dùng Refresh Token (từ Cookies) đổi Access Token mới tự động không gián đoạn (Silent Refresh).
+  - Nếu Token hết hạn (Expired), hệ thống có thể gọi `/api/auth/tokens/refresh` để dùng Refresh Token (từ Cookies) đổi Access Token mới tự động không gián đoạn (Silent Refresh).
 
 **AC-AUTH-04 — Phân quyền truy cập trang (Role-based Routing)**
 
