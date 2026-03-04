@@ -171,3 +171,9 @@ Hệ thống IOC có 3 đối tượng người dùng chính (Nhà trường, Do
 - **Cơ chế Rate Limit (Giới hạn requests)**:
   - Controller (IP Focus): Ngăn chặn Flood attack tại mọi endpoint Authentication (IP-RateLimit 5req/10m tại Login, 3req/10m tại Forgot Password).
   - Handler (Email Focus): Ngăn chặn thuật toán vét cạn Password (Brute-force) với rule block 15 phút nếu nhập sai cho 1 email 5 lần trong 15 phút.
+
+  ## 5. Endpoint List
+  - **Login**: `POST /api/auth/login`
+    - **Description**: Login
+    - **Request**: `LoginRequest` (Email, Password, RememberMe)
+    - **Response**: `LoginResponse` (AccessToken, RefreshToken, Email, Role, ExpiresIn)

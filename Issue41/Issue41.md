@@ -1,119 +1,98 @@
-## 1. Tổng quan & Bối cảnh (Overview & Context)
+# 1. Tổng quan & Bối cảnh (Overview & Context)
 
-## Vấn đề (Problem):
+## 1.1 Vấn đề (Problem)
+Đánh giá năng lực (Evaluation) là kết quả quan trọng nhất của kỳ thực tập. Hiện tại, việc thiếu thông tin minh bạch về các đợt đánh giá (Giữa kỳ, Cuối kỳ) và tiêu chí chấm điểm khiến sinh viên bị động, không kịp thời nhận diện điểm yếu để cải thiện trước khi kết thúc kỳ thực tập.
 
-Đánh giá năng lực là kết quả quan trọng nhất của kỳ thực tập. Sinh viên thường lo lắng không biết mình đang được đánh giá ở giai đoạn nào, điểm số ra sao và tiêu chí là gì. Việc thiếu thông tin minh bạch về các đợt đánh giá (Giữa kỳ, Cuối kỳ) khiến sinh viên bị động, không kịp cải thiện kết quả trước khi kỳ thực tập kết thúc.
+## 1.2 Giá trị Nghiệp vụ (Business Value)
+- **Minh bạch hóa kết quả**: Giúp sinh viên nắm bắt lộ trình đánh giá và kết quả hiện tại một cách rõ ràng.
+- **Theo dõi tiến độ**: Nhận biết chu kỳ nào đang diễn ra, chu kỳ nào đã kết thúc để chuẩn bị báo cáo phù hợp.
+- **Phản hồi kịp thời**: Điểm số chi tiết và nhận xét từ Mentor giúp sinh viên nhận ra điểm mạnh/yếu để khắc phục.
 
-## Giá trị Nghiệp vụ (Business Value):
-
-- **Minh bạch hóa kết quả:** Giúp sinh viên nắm bắt được lộ trình đánh giá và kết quả hiện tại của mình.
-
-- **Theo dõi tiến độ:** Biết được chu kỳ nào đang diễn ra, chu kỳ nào đã kết thúc để chuẩn bị tâm thế/báo cáo phù hợp.
-
-- **Phản hồi kịp thời:** Nhìn thấy điểm số chi tiết giúp sinh viên nhận ra điểm mạnh/yếu để khắc phục.
-
-## Đối tượng (Actor):
-
-- **Primary Actor:** Sinh viên (Student) — người xem kết quả.
-
-- **Secondary Actors:** Mentor/Enterprise — người thực hiện chấm điểm (tạo dữ liệu cho view này).
+## 1.3 Đối tượng (Actor)
+- **Primary Actor**: Sinh viên (Student) — người xem kết quả đánh giá của nhóm và của cá nhân.
+- **Secondary Actors**: Mentor/Enterprise — người thực hiện chấm điểm và tạo dữ liệu (Overview data).
 
 ---
 
-## 2. Luồng Người dùng (User Flow)
+# 2. Luồng Người dùng (User Flow)
 
-## 2.1. Luồng Xem Danh sách Chu kỳ (Overview Level)
+## 2.1 Luồng Xem Danh sách Chu kỳ
+1. Sinh viên truy cập vào menu "Đánh giá" (Evaluations).
+2. Hệ thống hiển thị danh sách các chu kỳ đánh giá (Evaluation Cycles) áp dụng cho dự án/nhóm của sinh viên.
+3. Thông tin hiển thị: Tên chu kỳ, Thời gian (Bắt đầu - Kết thúc), Trạng thái (Sắp/Đang/Đã kết thúc) và tiến độ chấm điểm của Mentor.
 
-1. Student truy cập menu **"Đánh giá"**.
+## 2.2 Luồng Xem Đánh giá Chung của Nhóm
+1. Sinh viên click chọn một chu kỳ cụ thể.
+2. Hệ thống hiển thị danh sách tất cả thành viên trong nhóm thực tập.
+3. Thông tin hiển thị cho từng thành viên: Họ tên, MSSV, Trạng thái chấm (Đã chấm/Chưa chấm), Ngày chấm gần nhất.
+4. Điểm tổng chỉ hiển thị cho bản thân, điểm của người khác hiển thị "--" hoặc bị ẩn đi.
 
-2. Hệ thống hiển thị **Bảng thông tin chung các chu kỳ** (Evaluation Cycles).
-
-3. Bảng gồm các cột: **Tên chu kỳ** (Giữa kỳ, Cuối kỳ...), **Thời gian** (Bắt đầu - Kết thúc), **Trạng thái** (Badge: Sắp diễn ra/Đang diễn ra/Kết thúc), **Tiến độ chấm** (Số SV đã chấm/Tổng SV).
-
-4. Student click vào tên một chu kỳ để xem chi tiết.
-
-## 2.2. Luồng Xem Chi tiết Chu kỳ & Danh sách Sinh viên (Cycle Detail Level)
-
-1. Sau khi click chọn chu kỳ, hệ thống chuyển vào màn hình chi tiết.
-
-2. **Phần trên:** Hiển thị lại thông tin chung của chu kỳ đó.
-
-3. **Phần dưới:** Hiển thị **Danh sách sinh viên trong nhóm** được chấm trong chu kỳ này.
-
-   - Cột: Họ tên, MSSV, **Điểm tổng** (nếu đã công bố), **Trạng thái chấm** (Đã chấm/Chưa chấm), **Ngày chấm gần nhất**.
-
-4. Student click vào dòng tên của chính mình (hoặc nút "Xem chi tiết") để xem bảng điểm cụ thể.
-
-   - *Lưu ý:* Thường sinh viên chỉ được xem điểm chi tiết của bản thân (quyền riêng tư), nhưng xem danh sách trạng thái (ai đã được chấm) của cả nhóm thì được.
-
-## 2.3. Luồng Xem Chi tiết Điểm (Score Breakdown Level)
-
-1. Hệ thống hiển thị phiếu điểm chi tiết của Student trong chu kỳ đó.
-
-2. Nội dung gồm các tiêu chí đánh giá (ví dụ: Kỷ luật, Chuyên môn, Teamwork...) và điểm số/nhận xét tương ứng cho từng mục.
-
-3. Hiển thị Điểm tổng kết và Nhận xét chung của Mentor.
+## 2.3 Luồng Xem Chi tiết Phiếu điểm Cá nhân
+1. Sinh viên click vào mũi tên xem chi tiết tại dòng tên của chính mình.
+2. Hệ thống hiển thị phiếu điểm chi tiết gồm: Các tiêu chí (VD: Kỷ luật, Chuyên môn...), Điểm số từng phần, và Nhận xét chung (Feedback) từ Mentor.
+3. Nếu sinh viên cố gắng truy cập chi tiết điểm của người khác, hệ thống sẽ chặn truy cập (Bảo mật).
 
 ---
 
-## 3. Tiêu chí Chấp nhận (Acceptance Criteria)
+# 3. Tiêu chí Chấp nhận (Acceptance Criteria)
 
-## AC-EVAL-01 — Hiển thị Danh sách Chu kỳ
+## AC-01: Hiển thị Danh sách Chu kỳ
+- **Given**: Sinh viên đã đăng nhập và thuộc một nhóm thực tập, truy cập trang "Đánh giá".
+- **When**: Trang tải dữ liệu thành công.
+- **Then**:
+  - Hệ thống hiển thị danh sách các đợt đánh giá thuộc nhóm/dự án của sinh viên.
+  - Trạng thái được BE tự động tính toán dựa trên ngày tháng (Upcoming, Active, Ended) để hiển thị.
+  - Hiển thị tiến độ chấm điểm chung của nhóm (Ví dụ: "Đã chấm 3/5 sinh viên").
 
-- **Given:** Student truy cập trang Đánh giá.
+## AC-02: Xem Danh sách Nhóm thuộc Chu kỳ
+- **Given**: Sinh viên đang ở danh sách chu kỳ.
+- **When**: Click vào một chu kỳ (VD: "Đánh giá Giữa kỳ").
+- **Then**:
+  - Chuyển hướng đến bảng danh sách các thành viên trong nhóm dự án cho chu kỳ đó.
+  - Cột "Điểm tổng" của các sinh viên khác bị ẩn hoặc hiển thị `--` trừ điểm của bản thân mình (nếu đã được chấm).
 
-- **When:** Trang tải xong.
+## AC-03: Xem Phiếu điểm Chi tiết (My Score)
+- **Given**: Sinh viên ở trang danh sách thuộc chu kỳ.
+- **When**: Click vào tên của CHÍNH MÌNH (chức năng "Xem chi tiết").
+- **Then**:
+  - Hệ thống mở phiếu điểm hoàn chỉnh.
+  - Liệt kê rõ: Điểm thành phần theo từng tiêu chí con, Điểm tổng kết và Nhận xét của Mentor.
 
-- **Then:**
-
-  - Hiển thị danh sách các đợt đánh giá của dự án.
-
-  - Cột Status hiển thị đúng màu sắc (Sắp diễn ra: Xám/Vàng, Đang diễn ra: Xanh dương, Kết thúc: Xanh lá/Đỏ).
-
-  - Hiển thị đúng số lượng sinh viên đã được chấm (ví dụ: "3/5").
-
-## AC-EVAL-02 — Xem Chi tiết Chu kỳ (Drill-down)
-
-- **Given:** Student click vào "Đánh giá Giữa kỳ".
-
-- **When:** Vào trang chi tiết.
-
-- **Then:**
-
-  - Hiển thị danh sách sinh viên thuộc nhóm.
-
-  - Cột Điểm tổng chỉ hiển thị giá trị số nếu Trạng thái là "Đã chấm" (và có thể thêm điều kiện "Đã công bố"). Nếu chưa chấm, hiển thị "--" hoặc "Chưa có".
-
-## AC-EVAL-03 — Xem Phiếu điểm Chi tiết (My Score)
-
-- **Given:** Student muốn xem mình bị trừ điểm ở đâu.
-
-- **When:** Click vào tên mình trong danh sách (hoặc nút "Xem điểm").
-
-- **Then:**
-
-  - Hiển thị Modal hoặc trang con chứa bảng tiêu chí.
-
-  - Liệt kê rõ: Tiêu chí A (8/10), Tiêu chí B (7/10)...
-
-  - Hiển thị lời nhận xét (Feedback) của Mentor nếu có.
-
-## AC-EVAL-04 — Quyền Riêng tư (Privacy)
-
-- **Given:** Student A đang xem danh sách sinh viên của chu kỳ.
-
-- **When:** Thử click vào tên của Student B để xem chi tiết điểm.
-
-- **Then:**
-
-  - Hệ thống **KHÔNG** cho phép (nút bị disable hoặc click vào báo "Bạn không có quyền xem chi tiết điểm người khác").
-
-  - Student chỉ được xem chi tiết điểm của chính mình (My View).
+## AC-04: Đảm bảo Quyền Riêng tư (Privacy Guard)
+- **Given**: Sinh viên A đang xem danh sách trạng thái chấm điểm của nhóm.
+- **When**: Sinh viên A cố gắng xem chi tiết điểm của Sinh viên B (click UI hoặc gọi trực tiếp API Bypass).
+- **Then**:
+  - UI không hiển thị nút "Xem điểm" đối với các dòng không phải user đăng nhập.
+  - API backend trả lỗi mạnh `403 Forbidden` với message: *"Bạn không có quyền xem chi tiết điểm của người khác."*
 
 ---
 
-## 4. Đặc tả kỹ thuật (Technical Notes)
+# 4. Đặc tả Kỹ thuật (Technical Specifications)
 
-- **Privacy Logic:** API lấy chi tiết điểm `GET /api/evaluations/{cycleId}/students/{studentId}` cần check quyền: Nếu `current_user.id != studentId` (và không phải Mentor/Admin) thì trả về 403 Forbidden.
+Dựa theo chuẩn **FFA Framework (IOCv2 Agent Skills)**:
 
-- **Status Calculation:** Trạng thái chu kỳ (Sắp/Đang/Xong) có thể tính toán dựa trên `Current Date` so với `StartDate` và `EndDate` của chu kỳ, hoặc dựa trên một trường status cứng trong DB nếu Admin set thủ công.
+## 4.1 Danh sách API Endpoints Bắt buộc
+
+| API Endpoint | Method | Path | Request Variables | Response Structure (Thành công 200 OK) | Mã lỗi dự kiến |
+| --- | --- | --- | --- | --- | --- |
+| Lấy danh sách chu kỳ đánh giá của SV | **GET** | `/api/v1/evaluations/cycles` | *Query*: `projectId` (tùy chọn lọc nếu SV thuộc nhiều dự án) | `[ { cycleId, name, startDate, endDate, status, gradedCount, totalCount } ]` | **401 Unauthorized**<br>**429 Too Many Requests** |
+| Xem danh sách sinh viên đánh giá trong chu kỳ | **GET** | `/api/v1/evaluations/cycles/{cycleId}` | Không | `{ cycleInfo: {...}, students: [ { studentId, fullName, isGraded, gradedAt, totalScore } ] }` | **400 Bad Request** (Lỗi Validator)<br>**404 Not Found** (Không tìm thấy chu kỳ) |
+| Lấy chi tiết phiếu điểm cá nhân | **GET** | `/api/v1/evaluations/cycles/{cycleId}/students/{studentId}` | Không | `{ studentId, cycleId, totalScore, feedback, criteriaScores: [ { criteriaName, score, maxScore, comments } ] }` | **403 Forbidden** (Truy cập điểm người khác)<br>**404 Not Found** (Chưa có điểm) |
+
+*[⚠️ Architecture Violation]: Đảm bảo Entity `EvaluationCycle` có lưu trữ mối quan hệ với `Project`/`Term`, BE cần logic trích xuất `StudentId` từ `JWT Token` để lọc ra đúng dữ liệu danh sách thuộc về sinh viên đó, tránh việc list ra chu kỳ của người khác.*
+
+## 4.2 [FFA-ACV] \u0026 [FFA-ERR] Validation \u0026 Response Data
+- **Request Validation**:
+  - Tham số `cycleId` và `studentId` trên URL Route bắt buộc là UUID hợp lệ. Nếu sai định dạng lập tức văng Exception -> Xử lý thành **400 Bad Request**.
+- **Data Protection ở Endpoint List Sinh Viên (`cycles/{cycleId}`)**:
+  - Trường `totalScore` trong mảng `students` nếu bản ghi không thuộc về `CurrentUser.Id` thì Backend **BẮT BUỘC** gán giá trị thành `null` trước khi send Response cục bộ (ngăn lộ qua tools Network Dumper).
+
+## 4.3 [FFA-SEC] Authentication \u0026 Authorization
+- Ràng buộc Authentication (bắt buộc Login): Thêm Header `[Authorize(Roles = "Student")]` trên controller.
+- **Authorization Cross-Check (Tầng Handler)**:
+  - Ở Query `GetEvaluationDetailQueryHandler` lấy Phiếu điểm cá nhân, thực hiện logic: `if (currentUser.Id != request.StudentId) throw new ForbiddenAccessException("Bạn không có quyền xem chi tiết điểm của người khác");`
+  - Global Exception middleware của FFA-ERR sẽ tự chuyển ngoại lệ đó thành mã `403 Forbidden`.
+
+## 4.4 [FFA-PERF] Cấu hình Rate Limit
+- **Read APIs Rate Limit**: Sử dụng IP-based Rule Rate Limit để ngăn bot/script tự động crawl điểm của sinh viên liên tục.
+  - Config: **60 requests / 1 phút / IP** áp dụng cho toàn bộ scope `EvaluationController`. Vi phạm trả ra lỗi `429 Too Many Requests`.
