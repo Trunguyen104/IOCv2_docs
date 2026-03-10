@@ -309,7 +309,9 @@ Table logbooks {
   logbook_id uuid [pk]
   internship_id uuid [not null, ref: > internship_groups.internship_id]
   student_id uuid [ref: > students.student_id]
-  content text
+  summary text
+  issue text
+  plan text
   status smallint 
   
   created_at timestamptz [not null, default: `now()`]
