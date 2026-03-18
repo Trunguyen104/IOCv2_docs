@@ -39,8 +39,8 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 2. Hệ thống hiển thị danh sách tài khoản hành chính: STT, Mã, Họ tên, Email, Đơn vị, Vai trò, Trạng thái, Ngày tạo
 3. Hỗ trợ:
    - Tìm kiếm (debounce 300ms) theo từ khóa
-   - Bộ lọc nâng cao (Advanced Filter) cho phép lọc theo: Email, Mã, Đơn vị, Vai trò, Trạng thái, Ngày tạo
-   - Sắp xếp theo nhiều cột: Họ tên, Email, Đơn vị, Ngày tạo
+   - Bộ lọc nâng cao (Advanced Filter) đồng bộ backend query: SearchTerm, Role, Status
+   - Sắp xếp: SortColumn, SortOrder (asc/desc)
    - Phân trang: 10/20/50/100 bản ghi mỗi trang
 4. Các hành động: Tạo, Chỉnh sửa, Đặt lại mật khẩu, Vô hiệu/Hồi phục, Xóa
 5. Mọi thao tác hiển thị thông báo thành công/lỗi và ghi log cho audit
@@ -54,24 +54,21 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
    - Họ tên (bắt buộc, text input)
    - Email (bắt buộc, email input)
    - Vai trò (bắt buộc, select dropdown - chọn từ danh sách roles hệ thống)
-   - Đơn vị (bắt buộc, phụ thuộc vào vai trò được chọn):
-     * Vai trò INTERNAL: Tự động hiển thị "Nội bộ" (disabled input)
-     * Vai trò SCHOOL: Hiển thị Combobox để chọn từ danh sách trường học
-     * Vai trò ENTERPRISE: Hiển thị Combobox để chọn từ danh sách doanh nghiệp
-     * Chưa chọn vai trò: Hiển thị input disabled với placeholder "Vui lòng chọn vai trò"
-   - Mã
-   - Mật khẩu (bắt buộc, password input)
-   - Xác nhận mật khẩu (bắt buộc, password input)
+   - Số điện thoại (tùy chọn)
+   - AvatarUrl (tùy chọn)
+   - Đơn vị (UnitId) (bắt buộc tùy role theo backend validator):
+     * Role = SchoolAdmin/Student: chọn University (UnitId)
+     * Role = EnterpriseAdmin/HR/Mentor: chọn Enterprise (UnitId)
+     * Role = SuperAdmin/Moderator: UnitId không bắt buộc
+   - Ghi chú: Backend tự sinh `UserCode` và mật khẩu ngẫu nhiên, sau đó gửi email thông báo (UI không nhập password/code).
 3. Validate form:
    - Validate khi blur (onBlur mode)
    - Re-validate khi thay đổi sau lần validate đầu tiên (onChange reValidateMode)
    - Kiểm tra các điều kiện:
      * Họ tên không được để trống
      * Email hợp lệ (format email) và không được để trống
-     * Mật khẩu đủ mạnh (theo password schema)
-     * Xác nhận mật khẩu phải khớp với mật khẩu
      * Vai trò phải được chọn
-     * Đơn vị phải được chọn (nếu vai trò yêu cầu)
+     * UnitId bắt buộc nếu Role ∈ {SchoolAdmin, EnterpriseAdmin, HR, Mentor, Student}
 4. Khi nhấn "Tạo":
    - Nếu form hợp lệ: Gửi request tạo tài khoản với trạng thái mặc định ACTIVE
    - Nếu email trùng: Hiển thị modal lỗi "Email đã tồn tại trong hệ thống", form vẫn mở
@@ -85,21 +82,22 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 2. Chọn "Chỉnh sửa" từ menu
 3. Hiển thị modal "Chỉnh sửa tài khoản hành chính" với form đã điền sẵn dữ liệu hiện tại:
    - Họ tên (bắt buộc, text input, có giá trị hiện tại)
-   - Email (disabled, hiển thị email hiện tại - không thể chỉnh sửa)
-   - Vai trò (bắt buộc, select dropdown - có giá trị hiện tại)
-   - Đơn vị (bắt buộc, phụ thuộc vào vai trò được chọn - có giá trị hiện tại):
-     * Vai trò INTERNAL: Tự động hiển thị "Nội bộ" (disabled input)
-     * Vai trò SCHOOL: Hiển thị Combobox với trường học hiện tại được chọn
-     * Vai trò ENTERPRISE: Hiển thị Combobox với doanh nghiệp hiện tại được chọn
-   - Mã
-   - Không hiển thị trường Mật khẩu và Xác nhận mật khẩu
+   - Email (readonly, backend không hỗ trợ đổi email trong UpdateAdminUserCommand)
+   - Vai trò (readonly, backend hiện không hỗ trợ đổi role trong UpdateAdminUserCommand)
+   - Đơn vị (readonly, backend hiện không hỗ trợ đổi UnitId trong UpdateAdminUserCommand)
+   - Mã (readonly - UserCode)
+   - Số điện thoại (tùy chọn)
+   - Trạng thái (tùy chọn: Inactive/Active/Suspended)
+   - Ngày sinh (DateOfBirth - chuỗi ngày hợp lệ theo DateOnly, lưu ý validator backend hiện validate format)
+   - Giới tính (tùy chọn: Male/Female/Other)
+   - AvatarUrl (tùy chọn)
+   - Student fields (tùy chọn): StudentClass, StudentMajor, StudentGpa
 4. Validate form:
    - Validate khi blur (onBlur mode)
    - Re-validate khi thay đổi sau lần validate đầu tiên (onChange reValidateMode)
    - Kiểm tra các điều kiện:
      * Họ tên không được để trống
-     * Vai trò phải được chọn
-     * Đơn vị phải được chọn (nếu vai trò yêu cầu)
+     * DateOfBirth nếu gửi lên phải đúng format ngày (DateOnly)
 5. Khi nhấn "Cập nhật":
    - Nếu form hợp lệ: Gửi request cập nhật (không gửi email, không gửi mật khẩu)
    - Nếu thành công: Modal đóng, danh sách tự động cập nhật, hiển thị toast thông báo thành công, ghi log hành động
@@ -164,25 +162,85 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 2. Chọn "Đặt lại mật khẩu" từ menu
 3. Hiển thị modal "Đặt lại mật khẩu" với form:
    - Thông tin tài khoản (Họ tên, Email - readonly)
+   - Lý do đặt lại mật khẩu (reason - bắt buộc, 10..500 ký tự)
    - Xác nhận đặt lại mật khẩu
 4. Khi xác nhận đặt lại mật khẩu:
-   - Gửi request đặt lại mật khẩu về mật khẩu mặc định an toàn
+   - Gửi request `POST /api/v1/admin-users/{id}/reset-password` với body là `reason` (string)
    - Nếu thành công:
      * Modal đóng
      * Hiển thị toast thông báo thành công
+     * Không hiển thị mật khẩu mới trên UI (backend gửi email thông báo)
      * Ghi log audit
 ```
 
 ### 2.7. Quyền truy cập & Phê duyệt
 
 ```
-1. MASTER có thể cấp/revoke quyền cho MODERATOR và các admin khác
-2. Các thay đổi quyền được ghi lại và có thể truy vấn trong phần audit
+Insufficient Data:
+- AdminUsersController hiện không có endpoint để "cấp/revoke quyền" hoặc đổi role/UnitId sau khi tạo.
+- Role chỉ được gán tại lúc tạo (CreateAdminUserCommand) và các thao tác khác chỉ gồm: update profile, delete, toggle status, reset password.
 ```
 
 ---
 
-## 3. Tiêu chí Chấp nhận (Acceptance Criteria)
+## 3. Backend API Contract (Source of Truth)
+
+Nguồn chắc chắn: `Internship-OneConnect_IOC_v2.0_Backend/IOCv2.API/Controllers/Admin/AdminUsersController.cs`
+
+### Base Route
+
+`/api/v1/admin-users`
+
+### Response Wrapper
+
+- `ApiResponse<T>`: `{ success, message, data, errors }`
+- `ErrorResponse`: `{ statusCode, message, errors }`
+
+### Enums
+
+- `UserRole`: `SuperAdmin(1)`, `Moderator(2)`, `SchoolAdmin(3)`, `EnterpriseAdmin(4)`, `HR(5)`, `Mentor(6)`, `Student(7)`
+- `UserStatus`: `Inactive(1)`, `Active(2)`, `Suspended(3)`
+- `UserGender`: `Male(1)`, `Female(2)`, `Other(3)`
+
+### Endpoints
+
+1. GET `/api/v1/admin-users`
+- Query: `SearchTerm?`, `Role?`, `Status?`, `PageNumber=1`, `PageSize=10` (1..100), `SortColumn?`, `SortOrder?(asc|desc)`
+- 200: `ApiResponse<PaginatedResult<GetAdminUsersResponse>>`
+
+2. GET `/api/v1/admin-users/{id}`
+- 200: `ApiResponse<GetAdminUserByIdResponse>`
+- 404: `ErrorResponse`
+
+3. POST `/api/v1/admin-users`
+- Body: `CreateAdminUserCommand` (`FullName`, `Email`, `Role`, `PhoneNumber?`, `AvatarUrl?`, `UnitId?`)
+- 201: `ApiResponse<CreateAdminUserResponse>`
+- 400: `ErrorResponse`
+- 409: `ErrorResponse` (email conflict)
+
+4. PUT `/api/v1/admin-users/{id}`
+- Body: `UpdateAdminUserCommand` (`FullName`, `PhoneNumber?`, `Status?`, `DateOfBirth?`, `Gender?`, `AvatarUrl?`, `StudentClass?`, `StudentMajor?`, `StudentGpa?`)
+- 200: `ApiResponse<UpdateAdminUserResponse>`
+- 401/403/404: `ErrorResponse`
+
+5. DELETE `/api/v1/admin-users/{id}`
+- 200: `ApiResponse<DeleteAdminUserResponse>`
+- 401/403/404: `ErrorResponse`
+
+6. PATCH `/api/v1/admin-users/{id}/status`
+- Body: `UserStatus` (enum)
+- 200: `ApiResponse<ToggleUserStatusResponse>`
+- 401/403/404: `ErrorResponse`
+
+7. POST `/api/v1/admin-users/{id}/reset-password`
+- Body: `reason` (string, required, 10..500 chars)
+- 200: `ApiResponse<ResetUserPasswordResponse>`
+- Note: Response không trả về mật khẩu mới. Backend gửi email reset password theo cơ chế background job.
+- 401/403/404: `ErrorResponse`
+
+---
+
+## 4. Tiêu chí Chấp nhận (Acceptance Criteria)
 
 **AC-AOM-01** — Hiển thị danh sách tài khoản hành chính\
 **Given**: MASTER truy cập trang "Bảng Quản trị Hệ thống & Vận hành"\
@@ -198,11 +256,8 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 **Given**: MASTER mở modal "Tạo tài khoản hành chính"\
 **When**:
 
-- Điền form hợp lệ với các trường: Họ tên, Email, Vai trò, Đơn vị (tùy theo vai trò), Mật khẩu, Xác nhận mật khẩu
-- Trường "Đơn vị" thay đổi dựa trên vai trò được chọn:
-  - Vai trò INTERNAL: Tự động hiển thị "Nội bộ" (disabled)
-  - Vai trò SCHOOL: Chọn trường học từ Combobox
-  - Vai trò ENTERPRISE: Chọn doanh nghiệp từ Combobox
+- Điền form hợp lệ theo backend `CreateAdminUserCommand`: Họ tên, Email, Vai trò, UnitId (bắt buộc tùy role), Số điện thoại (tùy chọn), AvatarUrl (tùy chọn)
+- UnitId required nếu Role ∈ {SchoolAdmin, EnterpriseAdmin, HR, Mentor, Student}; SuperAdmin/Moderator không bắt buộc
 - Nhấn "Tạo"\
   **Then**:
 - Tài khoản được tạo thành công
@@ -210,6 +265,7 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 - Danh sách tự động cập nhật (React Query invalidation)
 - Hiển thị thông báo thành công
 - Ghi log hành động
+- Ghi chú: UserCode và mật khẩu khởi tạo được backend sinh tự động và gửi email (UI không hiển thị mật khẩu)
 
 **AC-AOM-03** — Tạo tài khoản thất bại khi email trùng\
 **Given**: Email đã tồn tại trong hệ thống\
@@ -226,8 +282,9 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 **When**:
 
 - Modal hiển thị dữ liệu hiện tại của tài khoản
-- Trường Email bị disabled (không thể chỉnh sửa)
-- Cập nhật các trường hợp lệ (Họ tên, Vai trò, Đơn vị) và lưu\
+- Trường Email readonly (backend không hỗ trợ đổi email)
+- Vai trò/Đơn vị/UserCode readonly (backend hiện không hỗ trợ đổi role/UnitId trong `UpdateAdminUserCommand`)
+- Cập nhật các trường hợp lệ theo backend `UpdateAdminUserCommand` (tối thiểu Họ tên; các trường tùy chọn: PhoneNumber, Status, DateOfBirth, Gender, AvatarUrl, StudentClass, StudentMajor, StudentGpa) và lưu\
   **Then**:
 - Dữ liệu cập nhật thành công (Email không thay đổi)
 - Modal đóng
@@ -238,7 +295,11 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 **AC-AOM-05** — Đặt lại mật khẩu hoạt động đúng\
 **Given**: MASTER/Moderator chọn "Đặt lại mật khẩu"\
 **When**: Xác nhận đặt lại mật khẩu\
-**Then**: Mật khẩu tài khoản được đặt về mặc định an toàn, ghi log và thông báo thành công.
+**Then**:
+
+- Gửi request `POST /api/v1/admin-users/{id}/reset-password` với body là `reason` (string, 10..500 chars)
+- Backend reset mật khẩu và gửi email thông báo cho user (UI không hiển thị mật khẩu mới)
+- Ghi log và thông báo thành công.
 
 **AC-AOM-06** — Vô hiệu/hồi phục tài khoản thay đổi trạng thái và ghi log audit\
 **Given**: MASTER muốn vô hiệu hóa hoặc kích hoạt tài khoản\
@@ -279,8 +340,8 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 **When**:
 
 - Nhập từ khóa vào thanh tìm kiếm (debounce 300ms)
-- Áp dụng bộ lọc nâng cao (Advanced Filter) với các trường: Email, Đơn vị, Vai trò, Trạng thái, Ngày tạo
-- Sắp xếp theo các cột: Họ tên, Email, Đơn vị, Ngày tạo (hỗ trợ multi-column sorting)\
+- Áp dụng bộ lọc nâng cao đồng bộ backend query: Role, Status
+- Sắp xếp đồng bộ backend query: SortColumn, SortOrder (asc/desc)\
   **Then**:
 - Danh sách hiển thị đúng kết quả phù hợp với từ khóa tìm kiếm (debounce 300ms)
 - Bộ lọc nâng cao hoạt động đúng với các điều kiện đã chọn
@@ -289,7 +350,13 @@ Là Quản trị hệ thống, tôi muốn quản lý các tài khoản hành ch
 **AC-AOM-09** — Phân quyền granular (MASTER vs MODERATOR)\
 **Given**: Một người dùng có quyền MODERATOR\
 **When**: Truy cập trang quản lý tài khoản\
-**Then**: MODERATOR chỉ thấy/ chỉnh sửa các trường được phép; thao tác tạo/xóa chỉ dành cho MASTER.
+**Then**:
+
+- Tạo user: backend có rule theo role của auditor (CreateAdminUserHandler). Ví dụ:
+  - SchoolAdmin chỉ được tạo Student
+  - EnterpriseAdmin chỉ được tạo HR hoặc Mentor
+  - SuperAdmin/Moderator được tạo theo role hợp lệ
+- Update/Delete/ToggleStatus/ResetPassword: quyền chính xác phụ thuộc policy/auth của hệ thống (Insufficient Data ở layer controller do chưa thấy attribute `[Authorize]` trực tiếp trong `AdminUsersController`).
 
 **AC-AOM-10** — Performance: tải danh sách trong &lt; 2s với 10k tài khoản\
 **Given**: Hệ thống có lượng lớn tài khoản (ví dụ 10k)\
