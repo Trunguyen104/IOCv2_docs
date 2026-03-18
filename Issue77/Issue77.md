@@ -52,7 +52,7 @@ Sau khi Uni Admin thao tác phân công (Place) sinh viên vào thực tập t�
 - **When**: HR click nút "Accept" và Confirm xác nhận.
 - **Then**:
   - Trạng thái DB nhảy sang **Accepted**.
-  - Gửi Notification báo về cho Uni Admin và Student bết tin mừng.
+  - Gửi Notification báo về cho Uni Admin và Student.
   - UI quăng Toast màu xanh: *"Đã tiếp nhận sinh viên thành công"*.
 
 ## AC-03: Flow Từ chối (Reject) Sinh viên
